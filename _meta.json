@@ -15,5 +15,10 @@
   ],
   "platform": "openclaw",
   "main": "scripts/skill_tester.py",
-  "license": "MIT"
+  "license": "MIT",
+  "requires": {
+    "anyBins": [
+      "python3"
+    ]
+  }
 }

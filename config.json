@@ -1,0 +1,7 @@
+{
+  "default_timeout": 30,
+  "skills_dir": "workspace/skills",
+  "validate_metadata": true,
+  "validate_syntax": true,
+  "run_test_commands": true
+}
