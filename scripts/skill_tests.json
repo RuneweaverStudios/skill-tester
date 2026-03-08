@@ -9,7 +9,7 @@
   "subagent-dashboard": [{
       "name": "dashboard.py existence",
       "cmd": ["ls", "scripts/dashboard.py"],
-      "cwd": "/Users/ghost/.openclaw/workspace/skills/subagent-dashboard",
+      "cwd": ".",
       "expect_exit": 0
     }]
 }

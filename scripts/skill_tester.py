@@ -105,8 +105,10 @@ def run_tests_for_skill(skill_slug, test_config, skills_root):
     for i, t in enumerate(tests):
         name = t.get("name", f"test_{i}")
         cmd = t.get("cmd")
+        # SECURITY: Use list args instead of sh -c to avoid shell injection
         if isinstance(cmd, str):
-            cmd = ["sh", "-c", cmd]
+            import shlex
+            cmd = shlex.split(cmd)
         cwd = t.get("cwd")
         if cwd:
             cwd = skill_dir / cwd if not Path(cwd).is_absolute() else cwd
