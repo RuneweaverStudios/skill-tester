@@ -1,5 +1,6 @@
 ---
 name: skill-tester
+displayName: Skill Tester
 description: Run local tests for each OpenClaw skill before publishing to ClawHub. Discovers skills, runs configured or heuristic tests, reports pass/fail. Use to ensure all skills work as intended before upload.
 version: 1.0.0
 ---

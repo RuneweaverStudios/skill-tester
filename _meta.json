@@ -11,5 +11,6 @@
     "clawhub",
     "openclaw"
   ],
-  "platform": "openclaw"
+  "platform": "openclaw",
+  "main": "scripts/skill_tester.py"
 }
