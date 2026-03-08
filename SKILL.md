@@ -1,8 +1,8 @@
 ---
 name: skill-tester
 displayName: Skill Tester
-description: Run local tests for each OpenClaw skill before publishing to ClawHub. Discovers skills, runs configured or heuristic tests, reports pass/fail. Use to ensure all skills work as intended before upload.
-version: 1.0.0
+version: 1.1.0
+description: Run local tests for OpenClaw skills before publishing. Validates structure, metadata, syntax, and configured test commands with configurable timeouts.
 ---
 
 # Skill Tester
@@ -28,6 +28,7 @@ python3 <skill-dir>/scripts/skill_tester.py --skill <slug> [--json] [-v]
 - **--skill SLUG** — Run tests only for the given skill (e.g. agent-swarm, gateway-guard).
 - **--json** — Output a JSON report: `{ "skills": { ... }, "passed": N, "failed": M }`. Exit 1 if any failed.
 - **-v / --verbose** — Print each test name and result per skill.
+- **--timeout SECONDS** — Default timeout for test commands (default: 30).
 
 ## Test config
 
@@ -40,7 +41,12 @@ Tests are defined in `scripts/skill_tests.json` (next to `skill_tester.py`). Eac
 - **expect_json_keys** — Optional list of keys that must exist in stdout JSON.
 - **timeout** — Seconds (default 25).
 
-If a skill has no entry in `skill_tests.json`, the tester runs a heuristic: for each `scripts/*.py`, try `--help` or `--json` and treat success as pass.
+If a skill has no entry in `skill_tests.json`, the tester runs a multi-level heuristic:
+
+1. **Structure check**: Verifies SKILL.md and _meta.json exist
+2. **Metadata validation**: Parses _meta.json and checks for required fields (name, version, description)
+3. **Syntax check**: Runs `py_compile` on all Python scripts in `scripts/`
+4. **Execution check**: For each `scripts/*.py`, tries `--help` or `--json` and treats success as pass
 
 ## Requirements
 

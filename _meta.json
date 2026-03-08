@@ -1,16 +1,19 @@
 {
   "schema": "openclaw.skill.v1",
   "name": "skill-tester",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "Skill Tester",
-  "description": "Run local tests for each OpenClaw skill before publishing to ClawHub.",
+  "description": "Run local tests for OpenClaw skills before publishing. Validates structure, metadata, syntax, and configured test commands with configurable timeouts.",
   "author": "OpenClaw",
   "tags": [
     "testing",
     "skills",
     "clawhub",
+    "validation",
+    "ci",
     "openclaw"
   ],
   "platform": "openclaw",
-  "main": "scripts/skill_tester.py"
+  "main": "scripts/skill_tester.py",
+  "license": "MIT"
 }

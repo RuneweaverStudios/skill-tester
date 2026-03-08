@@ -71,12 +71,63 @@ def run_cmd(cmd, cwd=None, env=None, timeout=30):
         return -1, "", "command not found"
 
 
-def run_tests_for_skill(skill_slug, test_config, skills_root):
+def _check_required_files(skill_dir):
+    """Check that a skill has required files (SKILL.md or _meta.json)."""
+    has_skill_md = (skill_dir / "SKILL.md").exists()
+    has_meta = (skill_dir / "_meta.json").exists()
+    results = []
+    if has_skill_md:
+        results.append({"name": "SKILL.md exists", "passed": True, "message": "found"})
+    else:
+        results.append({"name": "SKILL.md exists", "passed": False, "message": "missing SKILL.md"})
+    if has_meta:
+        # Validate _meta.json is valid JSON with required fields
+        try:
+            with open(skill_dir / "_meta.json", "r", encoding="utf-8") as f:
+                meta = json.loads(f.read())
+            missing = [k for k in ("name", "version", "description") if k not in meta]
+            if missing:
+                results.append({"name": "_meta.json fields", "passed": False, "message": f"missing keys: {', '.join(missing)}"})
+            else:
+                results.append({"name": "_meta.json valid", "passed": True, "message": "valid JSON with required fields"})
+        except (json.JSONDecodeError, OSError) as e:
+            results.append({"name": "_meta.json valid", "passed": False, "message": f"invalid: {e}"})
+    else:
+        results.append({"name": "_meta.json exists", "passed": False, "message": "missing _meta.json"})
+    return results
+
+
+def _syntax_check_scripts(skill_dir):
+    """Run Python syntax check on all .py files in scripts/."""
+    results = []
+    scripts_dir = skill_dir / "scripts"
+    if not scripts_dir.exists():
+        return results
+    for py in scripts_dir.glob("*.py"):
+        code, out, err = run_cmd(
+            [sys.executable, "-m", "py_compile", str(py)],
+            cwd=skill_dir,
+            timeout=10,
+        )
+        if code == 0:
+            results.append({"name": f"{py.name} syntax", "passed": True, "message": "syntax ok"})
+        else:
+            results.append({"name": f"{py.name} syntax", "passed": False, "message": err[:200] if err else "syntax error"})
+    return results
+
+
+def run_tests_for_skill(skill_slug, test_config, skills_root, default_timeout=30):
     """Run all test entries for one skill. Return list of {name, passed, message}."""
     results = []
     skill_dir = skills_root / skill_slug
     tests = test_config.get(skill_slug, [])
     if not tests:
+        # Structural checks: required files and _meta.json validation
+        results.extend(_check_required_files(skill_dir))
+
+        # Syntax check all Python scripts
+        results.extend(_syntax_check_scripts(skill_dir))
+
         # Heuristic: try scripts with --help or --json
         scripts_dir = skill_dir / "scripts"
         if scripts_dir.exists():
@@ -84,7 +135,7 @@ def run_tests_for_skill(skill_slug, test_config, skills_root):
                 code, out, err = run_cmd(
                     [sys.executable, str(py), "--help"],
                     cwd=skill_dir,
-                    timeout=10,
+                    timeout=min(default_timeout, 10),
                 )
                 if code in (0, 2):  # many use 2 for no args
                     results.append({"name": f"{py.name} --help", "passed": True, "message": f"exit {code}"})
@@ -92,7 +143,7 @@ def run_tests_for_skill(skill_slug, test_config, skills_root):
                     code2, out2, err2 = run_cmd(
                         [sys.executable, str(py), "--json"],
                         cwd=skill_dir,
-                        timeout=10,
+                        timeout=min(default_timeout, 10),
                     )
                     if code2 == 0 and out2.strip().startswith("{"):
                         results.append({"name": f"{py.name} --json", "passed": True, "message": "JSON ok"})
@@ -143,6 +194,7 @@ def main():
     ap.add_argument("--list", action="store_true", help="List discoverable skills and exit")
     ap.add_argument("--json", action="store_true", help="Output JSON report")
     ap.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    ap.add_argument("--timeout", type=int, default=30, help="Default timeout in seconds for test commands (default: 30)")
     args = ap.parse_args()
 
     skills_root = _skills_dir()
@@ -170,7 +222,7 @@ def main():
             report["skills"][slug] = {"passed": False, "tests": [{"name": "?", "passed": False, "message": "skill not found"}]}
             report["failed"] += 1
             continue
-        tests = run_tests_for_skill(slug, config, skills_root)
+        tests = run_tests_for_skill(slug, config, skills_root, default_timeout=args.timeout)
         all_passed = all(t["passed"] for t in tests)
         report["skills"][slug] = {"passed": all_passed, "tests": tests}
         if all_passed:
